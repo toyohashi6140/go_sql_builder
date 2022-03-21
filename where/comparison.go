@@ -3,7 +3,8 @@ package where
 import (
 	"errors"
 	"fmt"
-	"go_batch/internal/database/query/sql/column"
+
+	"github.com/toyohashi6140/go_sql_builder/column"
 )
 
 type comparison struct {

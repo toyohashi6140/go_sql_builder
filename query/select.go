@@ -3,10 +3,11 @@ package query
 import (
 	"errors"
 	"fmt"
-	"go_batch/internal/database/query/sql/column"
-	"go_batch/internal/database/query/sql/table"
-	"go_batch/internal/database/query/sql/where"
 	"strings"
+
+	"github.com/toyohashi6140/go_sql_builder/column"
+	"github.com/toyohashi6140/go_sql_builder/table"
+	"github.com/toyohashi6140/go_sql_builder/where"
 )
 
 type bind []interface{}
