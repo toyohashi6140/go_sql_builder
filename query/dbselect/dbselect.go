@@ -1,21 +1,16 @@
-package query
+package dbselect
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/toyohashi6140/go_sql_builder/column"
+	"github.com/toyohashi6140/go_sql_builder/query"
 	"github.com/toyohashi6140/go_sql_builder/table"
 	"github.com/toyohashi6140/go_sql_builder/where"
 )
-
-type bind []interface{}
-
-type Query interface {
-	Build(bool) (string, error)
-	Bind() bind
-}
 
 type sel struct {
 	columns column.Columns
@@ -25,11 +20,11 @@ type sel struct {
 	orderby column.Columns
 }
 
-func NewSel(cols column.Columns, tbl table.Table, wheres ...*where.Condition) Query {
+func NewSel(cols column.Columns, tbl table.Table, wheres ...*where.Condition) query.Query {
 	return &sel{columns: cols, table: tbl, filter: wheres}
 }
 
-func SetGroupbyColumn(q Query, cols ...*column.Column) error {
+func SetGroupbyColumn(q query.Query, cols ...*column.Column) error {
 	sel, ok := q.(*sel)
 	if !ok {
 		return errors.New("assertion type query to *sel is faild")
@@ -38,7 +33,7 @@ func SetGroupbyColumn(q Query, cols ...*column.Column) error {
 	return nil
 }
 
-func SetOrderByColumn(q Query, cols ...*column.Column) error {
+func SetOrderByColumn(q query.Query, cols ...*column.Column) error {
 	sel, ok := q.(*sel)
 	if !ok {
 		return errors.New("assertion type query to *sel is faild")
@@ -72,11 +67,24 @@ func (s *sel) Build(or bool) (string, error) {
 	return strings.Join(queries, " "), nil
 }
 
-func (s *sel) Bind() bind {
-	bs := bind{}
+func (s *sel) Bind() query.Bind {
+	bs := query.Bind{}
 	for _, f := range s.filter {
 		b := f.Bind()
 		bs = append(bs, b...)
 	}
 	return bs
+}
+
+func (s *sel) Execute(db *sql.DB) (interface{}, error) {
+	sql, err := s.Build(false)
+	if err != nil {
+		return nil, err
+	}
+	bindVals := s.Bind()
+	rows, err := db.Query(sql, bindVals...)
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
 }
