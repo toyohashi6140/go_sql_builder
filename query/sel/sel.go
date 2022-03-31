@@ -1,4 +1,4 @@
-package dbselect
+package sel
 
 import (
 	"database/sql"
@@ -20,7 +20,7 @@ type sel struct {
 	orderby column.Columns
 }
 
-func NewSel(cols column.Columns, tbl table.Table, wheres ...*where.Condition) query.Query {
+func New(cols column.Columns, tbl table.Table, wheres ...*where.Condition) query.Query {
 	return &sel{columns: cols, table: tbl, filter: wheres}
 }
 
@@ -67,6 +67,7 @@ func (s *sel) Build(or bool) (string, error) {
 	return strings.Join(queries, " "), nil
 }
 
+// Bind returns bind-values "?" in SQL.
 func (s *sel) Bind() query.Bind {
 	bs := query.Bind{}
 	for _, f := range s.filter {
@@ -76,6 +77,7 @@ func (s *sel) Bind() query.Bind {
 	return bs
 }
 
+// Execute Build and Bind, and execute the query based on the SQL and Value created by these.
 func (s *sel) Execute(db *sql.DB) (interface{}, error) {
 	sql, err := s.Build(false)
 	if err != nil {
@@ -86,5 +88,17 @@ func (s *sel) Execute(db *sql.DB) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return rows, nil
+	rowVals := [][]interface{}{}
+	for rows.Next() {
+		colVals := []interface{}{}
+		for _, v := range s.columns {
+			colVals = append(colVals, v.Value)
+		}
+		err := rows.Scan(colVals...)
+		if err != nil {
+			return nil, err
+		}
+		rowVals = append(rowVals, colVals)
+	}
+	return rowVals, nil
 }
