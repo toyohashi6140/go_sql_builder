@@ -8,7 +8,7 @@ import (
 type Column struct {
 	CName string
 	Alias string
-	Value *interface{} // for "select" result
+	Value interface{} // for "select" result
 }
 
 func (c *Column) line() string {

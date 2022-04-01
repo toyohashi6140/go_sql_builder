@@ -59,7 +59,7 @@ func (c *comparisons) MakeCondition(or bool) (*Condition, error) {
 			if symbol == "" {
 				return nil, errors.New("operator is undefined. can't evaluate your where query")
 			}
-			condStrs = append(condStrs, fmt.Sprintf("%s %s %s", c.col.Name(), symbol, "?"))
+			condStrs = append(condStrs, fmt.Sprintf("%s %s %s", c.col.CName, symbol, "?"))
 			bind = append(bind, c.val)
 		} else {
 			return nil, errors.New("no keys or values are setting. can't make an expression")

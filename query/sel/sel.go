@@ -88,17 +88,22 @@ func (s *sel) Execute(db *sql.DB) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	rowVals := [][]interface{}{}
+	rowVals := []map[string]interface{}{}
 	for rows.Next() {
 		colVals := []interface{}{}
 		for _, v := range s.columns {
-			colVals = append(colVals, v.Value)
+			colVals = append(colVals, &v.Value)
 		}
 		err := rows.Scan(colVals...)
 		if err != nil {
 			return nil, err
 		}
-		rowVals = append(rowVals, colVals)
+
+		m := map[string]interface{}{}
+		for _, c := range s.columns {
+			m[c.Name()] = c.Value
+		}
+		rowVals = append(rowVals, m)
 	}
 	return rowVals, nil
 }
