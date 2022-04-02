@@ -27,7 +27,7 @@ func (i in) MakeCondition(or bool) (*Condition, error) {
 		operator = "IN"
 	}
 	return &Condition{
-		condition: []string{fmt.Sprintf("%s %s ( %s )", i.key, operator, strings.Join(questions, ","))},
+		condition: []string{fmt.Sprintf("%s %s ( %s )", i.key, operator, strings.Join(questions, ", "))},
 		bind:      i.val,
 		or:        or,
 	}, nil

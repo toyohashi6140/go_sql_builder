@@ -14,13 +14,13 @@ import (
 
 type sel struct {
 	columns column.Columns
-	table   table.Table
+	table   *table.Table
 	filter  where.Conditions
 	groupby column.Columns
-	orderby column.Columns
+	orderby *column.Order
 }
 
-func New(cols column.Columns, tbl table.Table, wheres ...*where.Condition) query.Query {
+func New(cols column.Columns, tbl *table.Table, wheres ...*where.Condition) query.Query {
 	return &sel{columns: cols, table: tbl, filter: wheres}
 }
 
@@ -33,12 +33,12 @@ func SetGroupbyColumn(q query.Query, cols ...*column.Column) error {
 	return nil
 }
 
-func SetOrderByColumn(q query.Query, cols ...*column.Column) error {
+func SetOrderByColumn(q query.Query, desc bool, cols ...*column.Column) error {
 	sel, ok := q.(*sel)
 	if !ok {
 		return errors.New("assertion type query to *sel is faild")
 	}
-	sel.orderby = cols
+	sel.orderby = column.NewOrder(desc, cols...)
 	return nil
 }
 
@@ -52,17 +52,21 @@ func (s *sel) Build(or bool) (string, error) {
 	}
 
 	queries := []string{
-		fmt.Sprintf("SELECT %s", strings.Join(s.columns.Line(), " ,")),
+		fmt.Sprintf("SELECT %s", strings.Join(s.columns.Line(), ", ")),
 		fmt.Sprintf("FROM %s", s.table.Line()),
 	}
 	if len(s.filter) > 0 {
 		queries = append(queries, fmt.Sprintf("WHERE %s", s.filter.Join(or)))
 	}
 	if len(s.groupby) > 0 {
-		queries = append(queries, fmt.Sprintf("GROUP BY %s", s.groupby.Name()))
+		queries = append(queries, fmt.Sprintf("GROUP BY %s", s.groupby.NoAliasName()))
 	}
-	if len(s.orderby) > 0 {
-		queries = append(queries, fmt.Sprintf("ORDER BY %s", s.orderby.Name()))
+	if s.orderby != nil {
+		if s.orderby.Desc() {
+			queries = append(queries, fmt.Sprintf("ORDER BY %s %s", s.orderby.Columns().Name(), "DESC"))
+		} else {
+			queries = append(queries, fmt.Sprintf("ORDER BY %s", s.orderby.Columns().Name()))
+		}
 	}
 	return strings.Join(queries, " "), nil
 }

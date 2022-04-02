@@ -11,6 +11,23 @@ type Column struct {
 	Value interface{} // for "select" result
 }
 
+type Order struct {
+	columns Columns
+	desc    bool
+}
+
+func NewOrder(desc bool, cols ...*Column) *Order {
+	return &Order{cols, desc}
+}
+
+func (o *Order) Columns() Columns {
+	return o.columns
+}
+
+func (o *Order) Desc() bool {
+	return o.desc
+}
+
 func (c *Column) line() string {
 	if c.Alias != "" {
 		return fmt.Sprintf("%s as %s", c.CName, c.Alias)
@@ -48,6 +65,15 @@ func (cs Columns) Name() string {
 	names := []string{}
 	for _, c := range cs {
 		names = append(names, c.Name())
+	}
+	return strings.Join(names, " ,")
+}
+
+// Name each name of columns join with comma(for GROUP BY)
+func (cs Columns) NoAliasName() string {
+	names := []string{}
+	for _, c := range cs {
+		names = append(names, c.CName)
 	}
 	return strings.Join(names, " ,")
 }
