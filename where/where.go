@@ -6,15 +6,16 @@ import (
 )
 
 const (
-	GT           string = "gt"
-	GE           string = "ge"
-	GTE          string = "gte"
-	LT           string = "lt"
-	LE           string = "le"
-	LTE          string = "lte"
-	EQ           string = "eq"
-	NE           string = "ne"
-	OPERATOR_KEY string = "operator"
+	GT      string = "gt"
+	GE      string = "ge"
+	GTE     string = "gte"
+	LT      string = "lt"
+	LE      string = "le"
+	LTE     string = "lte"
+	EQ      string = "eq"
+	NE      string = "ne"
+	NULL    string = "null"
+	NOTNULL string = "not null"
 )
 
 type Where interface {

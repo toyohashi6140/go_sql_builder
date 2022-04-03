@@ -59,7 +59,11 @@ func (c *comparisons) MakeCondition(or bool) (*Condition, error) {
 			if symbol == "" {
 				return nil, errors.New("operator is undefined. can't evaluate your where query")
 			}
-			condStrs = append(condStrs, fmt.Sprintf("%s %s %s", c.col.CName, symbol, "?"))
+			if symbol == "is null" || symbol == "is not null" {
+				condStrs = append(condStrs, fmt.Sprintf("%s %s", c.col.CName, symbol))
+			} else {
+				condStrs = append(condStrs, fmt.Sprintf("%s %s %s", c.col.CName, symbol, "?"))
+			}
 			bind = append(bind, c.val)
 		} else {
 			return nil, errors.New("no keys or values are setting. can't make an expression")
@@ -83,6 +87,10 @@ func operandToSymbol(operand string) string {
 		return "="
 	case "ne":
 		return "!="
+	case "null":
+		return "is null"
+	case "not null":
+		return "is not null"
 	default:
 		return ""
 	}
