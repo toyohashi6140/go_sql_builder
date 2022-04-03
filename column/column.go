@@ -66,7 +66,7 @@ func (cs Columns) Name() string {
 	for _, c := range cs {
 		names = append(names, c.Name())
 	}
-	return strings.Join(names, " ,")
+	return strings.Join(names, ", ")
 }
 
 // Name each name of columns join with comma(for GROUP BY)
@@ -75,5 +75,5 @@ func (cs Columns) NoAliasName() string {
 	for _, c := range cs {
 		names = append(names, c.CName)
 	}
-	return strings.Join(names, " ,")
+	return strings.Join(names, ", ")
 }
