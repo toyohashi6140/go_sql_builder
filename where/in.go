@@ -2,7 +2,8 @@ package where
 
 import (
 	"fmt"
-	"strings"
+
+	"github.com/toyohashi6140/go_sql_builder/query"
 )
 
 type in struct {
@@ -16,10 +17,7 @@ func NewIn(k string, not bool, v ...interface{}) Where {
 }
 
 func (i in) MakeCondition(or bool) (*Condition, error) {
-	questions := []string{}
-	for idx := 0; idx < len(i.val); idx++ {
-		questions = append(questions, "?")
-	}
+	questions := query.StrQuestion(len(i.val))
 	var operator string
 	if i.not {
 		operator = "NOT IN"
@@ -27,7 +25,7 @@ func (i in) MakeCondition(or bool) (*Condition, error) {
 		operator = "IN"
 	}
 	return &Condition{
-		condition: []string{fmt.Sprintf("%s %s ( %s )", i.key, operator, strings.Join(questions, ", "))},
+		condition: []string{fmt.Sprintf("%s %s ( %s )", i.key, operator, questions)},
 		bind:      i.val,
 		or:        or,
 	}, nil
