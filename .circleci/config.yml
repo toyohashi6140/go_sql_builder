@@ -19,6 +19,7 @@ jobs:
           name: Run tests
           command: |
             mkdir -p /tmp/test-reports
+            go mod init test github.com/toyohashi6140/go_sql_builder
             go test github.com/toyohashi6140/go_sql_builder/query/sel
       - store_test_results:
           path: /tmp/test-reports
