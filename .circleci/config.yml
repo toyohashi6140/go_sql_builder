@@ -16,6 +16,11 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Init Module
+          command: |
+            mkdir -p github.com/toyohashi6140/go_sql_builder
+            go mod init
+      - run:
           name: Run tests
           command: |
             mkdir -p /tmp/test-reports
