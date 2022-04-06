@@ -82,13 +82,8 @@ func (s *sel) Bind() query.Bind {
 }
 
 // Execute Build and Bind, and execute the query based on the SQL and Value created by these.
-func (s *sel) Execute(db *sql.DB) (interface{}, error) {
-	sql, err := s.Build(false)
-	if err != nil {
-		return nil, err
-	}
-	bindVals := s.Bind()
-	rows, err := db.Query(sql, bindVals...)
+func (s *sel) Execute(db *sql.DB, sql string, bind ...interface{}) (interface{}, error) {
+	rows, err := db.Query(sql, bind...)
 	if err != nil {
 		return nil, err
 	}
