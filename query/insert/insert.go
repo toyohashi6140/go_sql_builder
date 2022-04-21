@@ -29,7 +29,7 @@ func SetColumns(q query.Query, cols ...*column.Column) error {
 	return nil
 }
 
-func (i *insert) Build(or bool) (string, error) {
+func (i *insert) Build() (string, error) {
 	if i.table == nil {
 		return "", errors.New("No tables selected")
 	}

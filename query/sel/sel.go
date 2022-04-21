@@ -15,13 +15,22 @@ import (
 type sel struct {
 	columns column.Columns
 	table   *table.Table
-	filter  where.Conditions
+	filter  *where.Conditions
 	groupby column.Columns
 	orderby *column.Order
 }
 
-func New(cols column.Columns, tbl *table.Table, wheres ...*where.Condition) query.Query {
-	return &sel{columns: cols, table: tbl, filter: wheres}
+func New(cols column.Columns, tbl *table.Table) query.Query {
+	return &sel{columns: cols, table: tbl}
+}
+
+func SetFilterColumn(q query.Query, lo int, wheres ...*where.Condition) error {
+	sel, ok := q.(*sel)
+	if !ok {
+		return errors.New("assertion type query to *sel is faild")
+	}
+	sel.filter = where.NewConditions(lo, wheres...)
+	return nil
 }
 
 func SetGroupbyColumn(q query.Query, cols ...*column.Column) error {
@@ -43,7 +52,7 @@ func SetOrderByColumn(q query.Query, desc bool, cols ...*column.Column) error {
 }
 
 // Build build SQL of SELECT sentence which is structured from SELECT and FROM. if you set "true" to "or", each filter works as OR
-func (s *sel) Build(or bool) (string, error) {
+func (s *sel) Build() (string, error) {
 	if len(s.columns) == 0 {
 		return "", errors.New("no select columns. columns must need 1 at least")
 	}
@@ -55,10 +64,10 @@ func (s *sel) Build(or bool) (string, error) {
 		fmt.Sprintf("SELECT %s", strings.Join(s.columns.Line(), ", ")),
 		fmt.Sprintf("FROM %s", s.table.Line()),
 	}
-	if len(s.filter) > 0 {
-		queries = append(queries, fmt.Sprintf("WHERE %s", s.filter.Join(or)))
+	if s.filter != nil {
+		queries = append(queries, fmt.Sprintf("WHERE %s", s.filter.Join()))
 	}
-	if len(s.groupby) > 0 {
+	if s.groupby != nil {
 		queries = append(queries, fmt.Sprintf("GROUP BY %s", s.groupby.NoAliasName()))
 	}
 	if s.orderby != nil {
@@ -74,7 +83,7 @@ func (s *sel) Build(or bool) (string, error) {
 // Bind returns bind-values "?" in SQL.
 func (s *sel) Bind() query.Bind {
 	bs := query.Bind{}
-	for _, f := range s.filter {
+	for _, f := range s.filter.Conditions() {
 		b := f.Bind()
 		bs = append(bs, b...)
 	}
