@@ -10,21 +10,35 @@ type like struct {
 	not     bool
 }
 
-func NewLike(k string, kw interface{}, not bool) Where {
-	return like{key: k, keyword: kw, not: not}
+func NewLike(k string, kw interface{}, not bool) *like {
+	return &like{key: k, keyword: kw, not: not}
 }
 
-func (l like) MakeCondition(or bool) (*Condition, error) {
-	var operator string
-	if l.not {
-		operator = "NOT LIKE"
-	} else {
-		operator = "LIKE"
+type likes struct {
+	likes           []*like
+	logicalOperator int
+}
+
+func NewLikes(lo int, ls ...*like) Where {
+	return &likes{ls, lo}
+}
+
+func (ls *likes) MakeCondition() (*Condition, error) {
+	conds := []string{}
+	binds := []interface{}{}
+	for _, l := range ls.likes {
+		var operator string
+		if l.not {
+			operator = "NOT LIKE"
+		} else {
+			operator = "LIKE"
+		}
+		conds = append(conds, fmt.Sprintf("%s %s ?", l.key, operator))
+		binds = append(binds, fmt.Sprintf("%%%s%%", l.keyword))
 	}
-	ls := &Condition{
-		condition: []string{fmt.Sprintf("%s %s ?", l.key, operator)},
-		bind:      []interface{}{fmt.Sprintf("%%%s%%", l.keyword)},
-		or:        or,
-	}
-	return ls, nil
+	return &Condition{
+		condition:       conds,
+		bind:            binds,
+		logicalOperator: ls.logicalOperator,
+	}, nil
 }

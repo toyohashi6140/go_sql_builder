@@ -11,7 +11,7 @@ type Bind []interface{}
 type Query interface {
 	// Build return SQL as string
 	// where value etc. are replaced with "?"
-	Build(bool) (string, error)
+	Build() (string, error)
 
 	// Bind returns the original value of what was replaced with "?" As a slice
 	// type "Bind" is slice of interface{}

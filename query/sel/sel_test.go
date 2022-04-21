@@ -10,128 +10,192 @@ import (
 
 func Test_sel_Build(t *testing.T) {
 	// make where statement
-	comp := where.NewComparisons()
-	comp = where.NewComparison(&column.Column{CName: "member_id"}, 1, where.EQ).Append(comp)
-	comp = where.NewComparison(&column.Column{CName: "member_id", Alias: "id"}, 2, where.GT).Append(comp)
-	cond, _ := comp.MakeCondition(false)
-	condOr, _ := comp.MakeCondition(true)
+	cond, _ := where.NewComparisons(
+		where.AND,
+		where.NewComparison(&column.Column{CName: "member_id"}, 1, where.EQ),
+		where.NewComparison(&column.Column{CName: "member_id", Alias: "id"}, 2, where.GT),
+	).MakeCondition()
+	condOr, _ := where.NewComparisons(
+		where.OR,
+		where.NewComparison(&column.Column{CName: "member_id"}, 1, where.EQ),
+		where.NewComparison(&column.Column{CName: "member_id", Alias: "id"}, 2, where.GT),
+	).MakeCondition()
 
-	condIn, _ := where.NewIn("member_id", false, 1, 2, 3).MakeCondition(false)
-	condInT, _ := where.NewIn("member_id", true, 1, 2, 3).MakeCondition(true)
+	// in
+	condIn, _ := where.NewIns(
+		where.AND,
+		where.NewIn("member_id", false, 1, 2, 3),
+		where.NewIn("company_id", false, 1, 2, 3),
+	).MakeCondition()
+	condInT, _ := where.NewIns(
+		where.OR,
+		where.NewIn("member_id", true, 1, 2, 3),
+		where.NewIn("company_id", true, 1, 2, 3),
+	).MakeCondition()
 
-	condBet, _ := where.NewBetween("price", 500, 1000).MakeCondition(false)
-	condBetT, _ := where.NewBetween("price", 500, 1000).MakeCondition(true)
+	// between
+	condBet, _ := where.NewBetweens(
+		where.AND,
+		where.NewBetween("price", 500, 1000),
+		where.NewBetween("date", "2022-01-31", "2022-04-30"),
+	).MakeCondition()
+	condBetT, _ := where.NewBetweens(
+		where.OR,
+		where.NewBetween("price", 500, 1000),
+		where.NewBetween("date", "2022-01-31", "2022-04-30"),
+	).MakeCondition()
 
-	condLike, _ := where.NewLike("name", "toyohashi", false).MakeCondition(false)
-	condLikeT, _ := where.NewLike("name", "toyohashi", true).MakeCondition(true)
+	//like
+	condLike, _ := where.NewLikes(
+		where.AND,
+		where.NewLike("lastname", "toyohashi", false),
+		where.NewLike("firstname", 6140, false),
+	).MakeCondition()
+	condLikeT, _ := where.NewLikes(
+		where.OR,
+		where.NewLike("lastname", "toyohashi", true),
+		where.NewLike("firstname", 6140, true),
+	).MakeCondition()
 
 	type fields struct {
 		columns column.Columns
 		table   *table.Table
-		filter  where.Conditions
+		filter  *where.Conditions
 		groupby column.Columns
 		orderby *column.Order
-	}
-	type args struct {
-		or bool
 	}
 	tests := []struct {
 		name    string
 		fields  fields
-		args    args
 		want    string
 		wantErr bool
 	}{
 		// TODO: Add test cases.
 		{
 			"Case1: column and table have no alias",
-			fields{columns: column.Columns{{CName: "member_id"}}, table: &table.Table{TName: "member"}},
-			args{false},
+			fields{
+				columns: column.Columns{{CName: "member_id"}},
+				table:   &table.Table{TName: "member"},
+			},
 			"SELECT member_id FROM member",
 			false,
 		},
 		{
 			"Case2: column has alias, table has no alias",
-			fields{columns: column.Columns{{CName: "member_id", Alias: "id"}}, table: &table.Table{TName: "member"}},
-			args{false},
+			fields{
+				columns: column.Columns{{CName: "member_id", Alias: "id"}},
+				table:   &table.Table{TName: "member"},
+			},
 			"SELECT member_id as id FROM member",
 			false,
 		},
 		{
 			"Case3: column and table have alias",
-			fields{columns: column.Columns{{CName: "member_id", Alias: "id"}}, table: &table.Table{TName: "member", Alias: "m"}},
-			args{false},
+			fields{
+				columns: column.Columns{{CName: "member_id", Alias: "id"}},
+				table:   &table.Table{TName: "member", Alias: "m"},
+			},
 			"SELECT member_id as id FROM member as m",
 			false,
 		},
 		{
 			"Case4: with where statement AND",
-			fields{columns: column.Columns{{CName: "member_id", Alias: "id"}}, table: &table.Table{TName: "member", Alias: "m"}, filter: where.Conditions{cond}},
-			args{false},
+			fields{
+				columns: column.Columns{{CName: "member_id", Alias: "id"}},
+				table:   &table.Table{TName: "member", Alias: "m"},
+				filter:  where.NewConditions(where.AND, cond),
+			},
 			"SELECT member_id as id FROM member as m WHERE member_id = ? AND member_id > ?",
 			false,
 		},
 		{
 			"Case5: with where statement OR",
-			fields{columns: column.Columns{{CName: "member_id", Alias: "id"}}, table: &table.Table{TName: "member", Alias: "m"}, filter: where.Conditions{condOr}},
-			args{false},
+			fields{
+				columns: column.Columns{{CName: "member_id", Alias: "id"}},
+				table:   &table.Table{TName: "member", Alias: "m"},
+				filter:  where.NewConditions(where.OR, condOr),
+			},
 			"SELECT member_id as id FROM member as m WHERE (member_id = ? OR member_id > ?)",
 			false,
 		},
 		{
 			"Case6: with where statement(IN operator)",
-			fields{columns: column.Columns{{CName: "member_id", Alias: "id"}}, table: &table.Table{TName: "member", Alias: "m"}, filter: where.Conditions{condIn}},
-			args{false},
-			"SELECT member_id as id FROM member as m WHERE member_id IN ( ?, ?, ? )",
+			fields{
+				columns: column.Columns{{CName: "member_id", Alias: "id"}},
+				table:   &table.Table{TName: "member", Alias: "m"},
+				filter:  where.NewConditions(where.AND, condIn),
+			},
+			"SELECT member_id as id FROM member as m WHERE member_id IN ( ?, ?, ? ) AND company_id IN ( ?, ?, ? )",
 			false,
 		},
 		{
 			"Case7: with where statement(IN operator), or flag true",
-			fields{columns: column.Columns{{CName: "member_id", Alias: "id"}}, table: &table.Table{TName: "member", Alias: "m"}, filter: where.Conditions{condInT}},
-			args{false},
-			"SELECT member_id as id FROM member as m WHERE (member_id NOT IN ( ?, ?, ? ))",
+			fields{
+				columns: column.Columns{{CName: "member_id", Alias: "id"}},
+				table:   &table.Table{TName: "member", Alias: "m"},
+				filter:  where.NewConditions(where.OR, condInT),
+			},
+			"SELECT member_id as id FROM member as m WHERE (member_id NOT IN ( ?, ?, ? ) OR company_id NOT IN ( ?, ?, ? ))",
 			false,
 		},
 		{
 			"Case8: with where statement(BETWEEN operator)",
-			fields{columns: column.Columns{{CName: "member_id", Alias: "id"}}, table: &table.Table{TName: "member", Alias: "m"}, filter: where.Conditions{condBet}},
-			args{false},
-			"SELECT member_id as id FROM member as m WHERE price BETWEEN ? AND ?",
+			fields{
+				columns: column.Columns{{CName: "member_id", Alias: "id"}},
+				table:   &table.Table{TName: "member", Alias: "m"},
+				filter:  where.NewConditions(where.AND, condBet),
+			},
+			"SELECT member_id as id FROM member as m WHERE price BETWEEN ? AND ? AND date BETWEEN ? AND ?",
 			false,
 		},
 		{
 			"Case9: with where statement(BETWEEN operator), or flag true",
-			fields{columns: column.Columns{{CName: "member_id", Alias: "id"}}, table: &table.Table{TName: "member", Alias: "m"}, filter: where.Conditions{condBetT}},
-			args{false},
-			"SELECT member_id as id FROM member as m WHERE (price BETWEEN ? AND ?)",
+			fields{
+				columns: column.Columns{{CName: "member_id", Alias: "id"}},
+				table:   &table.Table{TName: "member", Alias: "m"},
+				filter:  where.NewConditions(where.OR, condBetT),
+			},
+			"SELECT member_id as id FROM member as m WHERE (price BETWEEN ? AND ? OR date BETWEEN ? AND ?)",
 			false,
 		},
 		{
 			"Case10: with where statement(LIKE operator)",
-			fields{columns: column.Columns{{CName: "member_id", Alias: "id"}}, table: &table.Table{TName: "member", Alias: "m"}, filter: where.Conditions{condLike}},
-			args{false},
-			"SELECT member_id as id FROM member as m WHERE name LIKE ?",
+			fields{
+				columns: column.Columns{{CName: "member_id", Alias: "id"}},
+				table:   &table.Table{TName: "member", Alias: "m"},
+				filter:  where.NewConditions(where.AND, condLike),
+			},
+			"SELECT member_id as id FROM member as m WHERE lastname LIKE ? AND firstname LIKE ?",
 			false,
 		},
 		{
 			"Case11: with where statement(LIKE operator), or flag true",
-			fields{columns: column.Columns{{CName: "member_id", Alias: "id"}}, table: &table.Table{TName: "member", Alias: "m"}, filter: where.Conditions{condLikeT}},
-			args{false},
-			"SELECT member_id as id FROM member as m WHERE (name NOT LIKE ?)",
+			fields{
+				columns: column.Columns{{CName: "member_id", Alias: "id"}},
+				table:   &table.Table{TName: "member", Alias: "m"},
+				filter:  where.NewConditions(where.OR, condLikeT),
+			},
+			"SELECT member_id as id FROM member as m WHERE (lastname NOT LIKE ? OR firstname NOT LIKE ?)",
 			false,
 		},
 		{
 			"Case12: with multi where statement",
-			fields{columns: column.Columns{{CName: "member_id", Alias: "id"}}, table: &table.Table{TName: "member", Alias: "m"}, filter: where.Conditions{cond, condIn, condBet, condLike}},
-			args{false},
-			"SELECT member_id as id FROM member as m WHERE member_id = ? AND member_id > ? AND member_id IN ( ?, ?, ? ) AND price BETWEEN ? AND ? AND name LIKE ?",
+			fields{
+				columns: column.Columns{{CName: "member_id", Alias: "id"}},
+				table:   &table.Table{TName: "member", Alias: "m"},
+				filter:  where.NewConditions(where.AND, cond, condIn, condBet, condLike),
+			},
+			"SELECT member_id as id FROM member as m WHERE member_id = ? AND member_id > ? AND member_id IN ( ?, ?, ? ) AND company_id IN ( ?, ?, ? ) AND price BETWEEN ? AND ? AND date BETWEEN ? AND ? AND lastname LIKE ? AND firstname LIKE ?",
 			false,
 		},
 		{
 			"Case13: with multi where statement",
-			fields{columns: column.Columns{{CName: "member_id", Alias: "id"}}, table: &table.Table{TName: "member", Alias: "m"}, filter: where.Conditions{cond, condIn, condBet, condLike}},
-			args{true},
-			"SELECT member_id as id FROM member as m WHERE (member_id = ? AND member_id > ?) OR (member_id IN ( ?, ?, ? )) OR (price BETWEEN ? AND ?) OR (name LIKE ?)",
+			fields{
+				columns: column.Columns{{CName: "member_id", Alias: "id"}},
+				table:   &table.Table{TName: "member", Alias: "m"},
+				filter:  where.NewConditions(where.OR, cond, condIn, condBet, condLike),
+			},
+			"SELECT member_id as id FROM member as m WHERE (member_id = ? AND member_id > ?) OR (member_id IN ( ?, ?, ? ) AND company_id IN ( ?, ?, ? )) OR (price BETWEEN ? AND ? AND date BETWEEN ? AND ?) OR (lastname LIKE ? AND firstname LIKE ?)",
 			false,
 		},
 		{
@@ -139,10 +203,9 @@ func Test_sel_Build(t *testing.T) {
 			fields{
 				columns: column.Columns{{CName: "count(*)", Alias: "count"}, {CName: "member_id", Alias: "id"}},
 				table:   &table.Table{TName: "member", Alias: "m"},
-				filter:  where.Conditions{cond},
+				filter:  where.NewConditions(where.AND, cond),
 				groupby: column.Columns{{CName: "member_id", Alias: "m"}},
 			},
-			args{false},
 			"SELECT count(*) as count, member_id as id FROM member as m WHERE member_id = ? AND member_id > ? GROUP BY member_id",
 			false,
 		},
@@ -151,11 +214,10 @@ func Test_sel_Build(t *testing.T) {
 			fields{
 				columns: column.Columns{{CName: "count(*)", Alias: "count"}, {CName: "member_id", Alias: "id"}},
 				table:   &table.Table{TName: "member", Alias: "m"},
-				filter:  where.Conditions{cond},
+				filter:  where.NewConditions(where.AND, cond),
 				groupby: column.Columns{{CName: "member_id", Alias: "m"}},
 				orderby: column.NewOrder(false, &column.Column{CName: "member_id", Alias: "id"}),
 			},
-			args{false},
 			"SELECT count(*) as count, member_id as id FROM member as m WHERE member_id = ? AND member_id > ? GROUP BY member_id ORDER BY id",
 			false,
 		},
@@ -164,25 +226,22 @@ func Test_sel_Build(t *testing.T) {
 			fields{
 				columns: column.Columns{{CName: "count(*)", Alias: "count"}, {CName: "member_id", Alias: "id"}},
 				table:   &table.Table{TName: "member", Alias: "m"},
-				filter:  where.Conditions{cond},
+				filter:  where.NewConditions(where.AND, cond),
 				groupby: column.Columns{{CName: "member_id", Alias: "m"}},
 				orderby: column.NewOrder(true, &column.Column{CName: "member_id", Alias: "id"}),
 			},
-			args{false},
 			"SELECT count(*) as count, member_id as id FROM member as m WHERE member_id = ? AND member_id > ? GROUP BY member_id ORDER BY id DESC",
 			false,
 		},
 		{
 			"Error Case1: No columns",
 			fields{columns: column.Columns{}, table: &table.Table{TName: "member"}},
-			args{false},
 			"",
 			true,
 		},
 		{
 			"Error Case2: undefined table name ",
 			fields{columns: column.Columns{{CName: "member_id", Alias: "id"}}, table: &table.Table{}},
-			args{false},
 			"",
 			true,
 		},
@@ -196,7 +255,7 @@ func Test_sel_Build(t *testing.T) {
 				groupby: tt.fields.groupby,
 				orderby: tt.fields.orderby,
 			}
-			got, err := s.Build(tt.args.or)
+			got, err := s.Build()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("sel.Build() error = %v, wantErr %v", err, tt.wantErr)
 				return

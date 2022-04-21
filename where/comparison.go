@@ -18,20 +18,14 @@ func NewComparison(col *column.Column, val interface{}, o string) *comparison {
 	return &comparison{col: col, val: val, operator: o}
 }
 
-// Append
-func (c *comparison) Append(w Where) Where {
-	comps, ok := w.(*comparisons)
-	if ok {
-		*comps = append(*comps, c)
-	}
-	return comps
+type comparisons struct {
+	comparisons     []*comparison
+	logicalOperator int
 }
 
-type comparisons []*comparison
-
 // NewComparisons
-func NewComparisons() Where {
-	return &comparisons{}
+func NewComparisons(lo int, comps ...*comparison) Where {
+	return &comparisons{comps, lo}
 }
 
 // NewComparisons make comparisons slice as Where interface. each comparison struct sets uniform operator(EQ)
@@ -41,19 +35,19 @@ func NewComparisonsEq(cols column.Columns, vals ...interface{}) (Where, error) {
 	}
 	comps := comparisons{}
 	for i, col := range cols {
-		comps = append(comps, &comparison{col: col, val: vals[i], operator: EQ})
+		comps.comparisons = append(comps.comparisons, &comparison{col: col, val: vals[i], operator: EQ})
 	}
 	return &comps, nil
 }
 
 // MakeCondition this function is make where expressoion if you set column name(or alias), table name(or alias), and operator.
-func (c *comparisons) MakeCondition(or bool) (*Condition, error) {
-	if len(*c) == 0 {
+func (c *comparisons) MakeCondition() (*Condition, error) {
+	if len(c.comparisons) == 0 {
 		return nil, errors.New("no keys or values are setting. can't make an expression")
 	}
 	condStrs := []string{}
 	bind := []interface{}{}
-	for _, c := range *c {
+	for _, c := range c.comparisons {
 		if c.col != nil && c.val != nil {
 			symbol := operandToSymbol(c.operator)
 			if symbol == "" {
@@ -69,7 +63,7 @@ func (c *comparisons) MakeCondition(or bool) (*Condition, error) {
 			return nil, errors.New("no keys or values are setting. can't make an expression")
 		}
 	}
-	cond := &Condition{condition: condStrs, bind: bind, or: or}
+	cond := &Condition{condition: condStrs, bind: bind, logicalOperator: c.logicalOperator}
 	return cond, nil
 }
 
