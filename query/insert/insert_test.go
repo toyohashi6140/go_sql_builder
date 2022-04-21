@@ -8,13 +8,9 @@ import (
 )
 
 func Test_insert_Build(t *testing.T) {
-	type args struct {
-		or bool
-	}
 	tests := []struct {
 		name    string
 		i       *insert
-		args    args
 		want    string
 		wantErr bool
 	}{
@@ -22,7 +18,6 @@ func Test_insert_Build(t *testing.T) {
 		{
 			"case1",
 			&insert{table: &table.Table{TName: "member", Alias: "m"}, values: []interface{}{1, "firstname", "lastname", "2000-01-01"}},
-			args{false},
 			"INSERT INTO member VALUES( ?, ?, ?, ? )",
 			false,
 		},
@@ -38,7 +33,6 @@ func Test_insert_Build(t *testing.T) {
 				),
 				[]interface{}{1, "firstname", "lastname", "2000-01-01"},
 			},
-			args{false},
 			"INSERT INTO member( member_id, first_name, last_name, birthday ) VALUES( ?, ?, ?, ? )",
 			false,
 		},
@@ -53,14 +47,13 @@ func Test_insert_Build(t *testing.T) {
 				),
 				[]interface{}{1, "firstname", "lastname", "2000-01-01"},
 			},
-			args{false},
 			"",
 			true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.i.Build(tt.args.or)
+			got, err := tt.i.Build()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("insert.Build() error = %v, wantErr %v", err, tt.wantErr)
 				return
