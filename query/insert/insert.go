@@ -31,7 +31,7 @@ func SetColumns(q query.Query, cols ...*column.Column) error {
 
 func (i *insert) Build() (string, error) {
 	if i.table == nil {
-		return "", errors.New("No tables selected")
+		return "", errors.New("no tables selected")
 	}
 	var sql string
 	questions := query.StrQuestion(len(i.values))

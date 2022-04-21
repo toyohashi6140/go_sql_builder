@@ -115,7 +115,7 @@ func Test_sel_Build(t *testing.T) {
 				table:   &table.Table{TName: "member", Alias: "m"},
 				filter:  where.NewConditions(where.OR, condOr),
 			},
-			"SELECT member_id as id FROM member as m WHERE (member_id = ? OR member_id > ?)",
+			"SELECT member_id as id FROM member as m WHERE ((member_id = ? OR member_id > ?))",
 			false,
 		},
 		{
@@ -135,7 +135,7 @@ func Test_sel_Build(t *testing.T) {
 				table:   &table.Table{TName: "member", Alias: "m"},
 				filter:  where.NewConditions(where.OR, condInT),
 			},
-			"SELECT member_id as id FROM member as m WHERE (member_id NOT IN ( ?, ?, ? ) OR company_id NOT IN ( ?, ?, ? ))",
+			"SELECT member_id as id FROM member as m WHERE ((member_id NOT IN ( ?, ?, ? ) OR company_id NOT IN ( ?, ?, ? )))",
 			false,
 		},
 		{
@@ -155,7 +155,7 @@ func Test_sel_Build(t *testing.T) {
 				table:   &table.Table{TName: "member", Alias: "m"},
 				filter:  where.NewConditions(where.OR, condBetT),
 			},
-			"SELECT member_id as id FROM member as m WHERE (price BETWEEN ? AND ? OR date BETWEEN ? AND ?)",
+			"SELECT member_id as id FROM member as m WHERE ((price BETWEEN ? AND ? OR date BETWEEN ? AND ?))",
 			false,
 		},
 		{
@@ -175,7 +175,7 @@ func Test_sel_Build(t *testing.T) {
 				table:   &table.Table{TName: "member", Alias: "m"},
 				filter:  where.NewConditions(where.OR, condLikeT),
 			},
-			"SELECT member_id as id FROM member as m WHERE (lastname NOT LIKE ? OR firstname NOT LIKE ?)",
+			"SELECT member_id as id FROM member as m WHERE ((lastname NOT LIKE ? OR firstname NOT LIKE ?))",
 			false,
 		},
 		{
