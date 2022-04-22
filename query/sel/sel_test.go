@@ -9,7 +9,7 @@ import (
 )
 
 func Test_sel_Build(t *testing.T) {
-	// make where statement
+	// make where clause
 	cond, _ := where.NewComparisons(
 		where.AND,
 		where.NewComparison(&column.Column{CName: "member_id"}, 1, where.EQ),
@@ -58,11 +58,12 @@ func Test_sel_Build(t *testing.T) {
 	).MakeCondition()
 
 	type fields struct {
-		columns column.Columns
-		table   *table.Table
-		filter  *where.Conditions
-		groupby column.Columns
-		orderby *column.Order
+		columns     column.Columns
+		table       *table.Table
+		filter      *where.Conditions
+		groupby     column.Columns
+		orderby     *column.Order
+		skip, limit int
 	}
 	tests := []struct {
 		name    string
@@ -99,7 +100,7 @@ func Test_sel_Build(t *testing.T) {
 			false,
 		},
 		{
-			"Case4: with where statement AND",
+			"Case4: with where clause AND",
 			fields{
 				columns: column.Columns{{CName: "member_id", Alias: "id"}},
 				table:   &table.Table{TName: "member", Alias: "m"},
@@ -109,7 +110,7 @@ func Test_sel_Build(t *testing.T) {
 			false,
 		},
 		{
-			"Case5: with where statement OR",
+			"Case5: with where clause OR",
 			fields{
 				columns: column.Columns{{CName: "member_id", Alias: "id"}},
 				table:   &table.Table{TName: "member", Alias: "m"},
@@ -119,7 +120,7 @@ func Test_sel_Build(t *testing.T) {
 			false,
 		},
 		{
-			"Case6: with where statement(IN operator)",
+			"Case6: with where clause(IN operator)",
 			fields{
 				columns: column.Columns{{CName: "member_id", Alias: "id"}},
 				table:   &table.Table{TName: "member", Alias: "m"},
@@ -129,7 +130,7 @@ func Test_sel_Build(t *testing.T) {
 			false,
 		},
 		{
-			"Case7: with where statement(IN operator), or flag true",
+			"Case7: with where clause(IN operator), or flag true",
 			fields{
 				columns: column.Columns{{CName: "member_id", Alias: "id"}},
 				table:   &table.Table{TName: "member", Alias: "m"},
@@ -139,7 +140,7 @@ func Test_sel_Build(t *testing.T) {
 			false,
 		},
 		{
-			"Case8: with where statement(BETWEEN operator)",
+			"Case8: with where clause(BETWEEN operator)",
 			fields{
 				columns: column.Columns{{CName: "member_id", Alias: "id"}},
 				table:   &table.Table{TName: "member", Alias: "m"},
@@ -149,7 +150,7 @@ func Test_sel_Build(t *testing.T) {
 			false,
 		},
 		{
-			"Case9: with where statement(BETWEEN operator), or flag true",
+			"Case9: with where clause(BETWEEN operator), or flag true",
 			fields{
 				columns: column.Columns{{CName: "member_id", Alias: "id"}},
 				table:   &table.Table{TName: "member", Alias: "m"},
@@ -159,7 +160,7 @@ func Test_sel_Build(t *testing.T) {
 			false,
 		},
 		{
-			"Case10: with where statement(LIKE operator)",
+			"Case10: with where clause(LIKE operator)",
 			fields{
 				columns: column.Columns{{CName: "member_id", Alias: "id"}},
 				table:   &table.Table{TName: "member", Alias: "m"},
@@ -169,7 +170,7 @@ func Test_sel_Build(t *testing.T) {
 			false,
 		},
 		{
-			"Case11: with where statement(LIKE operator), or flag true",
+			"Case11: with where clause(LIKE operator), or flag true",
 			fields{
 				columns: column.Columns{{CName: "member_id", Alias: "id"}},
 				table:   &table.Table{TName: "member", Alias: "m"},
@@ -179,7 +180,7 @@ func Test_sel_Build(t *testing.T) {
 			false,
 		},
 		{
-			"Case12: with multi where statement",
+			"Case12: with multi where clause",
 			fields{
 				columns: column.Columns{{CName: "member_id", Alias: "id"}},
 				table:   &table.Table{TName: "member", Alias: "m"},
@@ -189,7 +190,7 @@ func Test_sel_Build(t *testing.T) {
 			false,
 		},
 		{
-			"Case13: with multi where statement",
+			"Case13: with multi where clause",
 			fields{
 				columns: column.Columns{{CName: "member_id", Alias: "id"}},
 				table:   &table.Table{TName: "member", Alias: "m"},
@@ -199,7 +200,7 @@ func Test_sel_Build(t *testing.T) {
 			false,
 		},
 		{
-			"Case14: aggregate with group by statement",
+			"Case14: aggregate with group by clause",
 			fields{
 				columns: column.Columns{{CName: "count(*)", Alias: "count"}, {CName: "member_id", Alias: "id"}},
 				table:   &table.Table{TName: "member", Alias: "m"},
@@ -210,7 +211,7 @@ func Test_sel_Build(t *testing.T) {
 			false,
 		},
 		{
-			"Case15: aggregate with group by statement and sort by ORDER BY statement",
+			"Case15: aggregate with group by clause and sort by ORDER BY clause",
 			fields{
 				columns: column.Columns{{CName: "count(*)", Alias: "count"}, {CName: "member_id", Alias: "id"}},
 				table:   &table.Table{TName: "member", Alias: "m"},
@@ -222,7 +223,7 @@ func Test_sel_Build(t *testing.T) {
 			false,
 		},
 		{
-			"Case16: aggregate with group by statement and sort by ORDER BY statement",
+			"Case16: aggregate with group by clause and sort by ORDER BY clause",
 			fields{
 				columns: column.Columns{{CName: "count(*)", Alias: "count"}, {CName: "member_id", Alias: "id"}},
 				table:   &table.Table{TName: "member", Alias: "m"},
@@ -234,6 +235,37 @@ func Test_sel_Build(t *testing.T) {
 			false,
 		},
 		{
+			"Case17: set limit",
+			fields{
+				columns: column.Columns{{CName: "count(*)", Alias: "count"}, {CName: "member_id", Alias: "id"}},
+				table:   &table.Table{TName: "member", Alias: "m"},
+				limit:   10,
+			},
+			"SELECT count(*) as count, member_id as id FROM member as m LIMIT 10",
+			false,
+		},
+		{
+			"Case18: set skip and limit",
+			fields{
+				columns: column.Columns{{CName: "count(*)", Alias: "count"}, {CName: "member_id", Alias: "id"}},
+				table:   &table.Table{TName: "member", Alias: "m"},
+				skip:    10,
+				limit:   10,
+			},
+			"SELECT count(*) as count, member_id as id FROM member as m LIMIT 10, 10",
+			false,
+		},
+		{
+			"Case19: set skip and no set limit(pattarn of limit clause ignored)",
+			fields{
+				columns: column.Columns{{CName: "count(*)", Alias: "count"}, {CName: "member_id", Alias: "id"}},
+				table:   &table.Table{TName: "member", Alias: "m"},
+				skip:    10,
+			},
+			"SELECT count(*) as count, member_id as id FROM member as m",
+			false,
+		},
+		{
 			"Error Case1: No columns",
 			fields{columns: column.Columns{}, table: &table.Table{TName: "member"}},
 			"",
@@ -242,6 +274,12 @@ func Test_sel_Build(t *testing.T) {
 		{
 			"Error Case2: undefined table name ",
 			fields{columns: column.Columns{{CName: "member_id", Alias: "id"}}, table: &table.Table{}},
+			"",
+			true,
+		},
+		{
+			"Error Case2: undefined table struct ",
+			fields{columns: column.Columns{{CName: "member_id", Alias: "id"}}, table: nil},
 			"",
 			true,
 		},
