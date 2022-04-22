@@ -3,6 +3,8 @@ package where
 import (
 	"fmt"
 	"strings"
+
+	"github.com/toyohashi6140/go_sql_builder/query"
 )
 
 const (
@@ -21,37 +23,22 @@ const (
 	NOTNULL string = "not null"
 )
 
-type Where interface {
-	MakeCondition() (*Condition, error)
-}
-
-type wheres []Where
-
-func NewWheres(ws ...Where) wheres {
-	return ws
-}
-
-func (ws wheres) Join(or bool) (*Conditions, error) {
-	cs := &Conditions{}
-	for _, w := range ws {
-		c, err := w.MakeCondition()
-		if err != nil {
-			return nil, err
-		}
-		cs.conditions = append(cs.conditions, c)
+type (
+	Where interface {
+		MakeCondition() (*Condition, error)
 	}
-	return cs, nil
-}
 
-type Condition struct {
-	condition       []string      // SQL with placeholder
-	bind            []interface{} // bind value
-	logicalOperator int           // if it is true, each word(condition) is joined by "OR" operator
-}
+	Condition struct {
+		condition       []string   // SQL with placeholder
+		bind            query.Bind // bind value
+		logicalOperator int        // if it is true, each word(condition) is joined by "OR" operator
+	}
 
-func (c Condition) Bind() []interface{} {
-	return c.bind
-}
+	Conditions struct {
+		conditions      []*Condition
+		logicalOperator int
+	}
+)
 
 func (c Condition) join() string {
 	if c.logicalOperator == 1 {
@@ -60,17 +47,20 @@ func (c Condition) join() string {
 	return strings.Join(c.condition, " AND ")
 }
 
-type Conditions struct {
-	conditions      []*Condition
-	logicalOperator int
-}
-
 func NewConditions(lo int, conds ...*Condition) *Conditions {
 	return &Conditions{conds, lo}
 }
 
 func (cs *Conditions) Conditions() []*Condition {
 	return cs.conditions
+}
+
+func (cs *Conditions) Bind() query.Bind {
+	var bind query.Bind
+	for _, c := range cs.conditions {
+		bind = append(bind, c.bind...)
+	}
+	return bind
 }
 
 func (cs *Conditions) Join() string {

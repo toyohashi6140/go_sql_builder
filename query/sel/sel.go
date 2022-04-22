@@ -12,43 +12,76 @@ import (
 	"github.com/toyohashi6140/go_sql_builder/where"
 )
 
-type sel struct {
-	columns column.Columns
-	table   *table.Table
-	filter  *where.Conditions
-	groupby column.Columns
-	orderby *column.Order
-}
+type (
+	sel struct {
+		columns     column.Columns
+		table       *table.Table
+		filter      *where.Conditions
+		groupby     column.Columns
+		orderby     *column.Order
+		skip, limit int
+	}
 
-func New(cols column.Columns, tbl *table.Table) query.Query {
+	// SelectSetter An interface that collects setters for setting arbitrary parameters such as where filter and group by.
+	SelectSetter interface {
+		// Filter where clause
+		Filter(lo int, wheres ...*where.Condition) SelectSetter
+
+		// GroupBy group by columns(group by clause)
+		GroupBy(cols ...*column.Column) SelectSetter
+
+		// OrderBy order by columns(order by clause)
+		OrderBy(desc bool, cols ...*column.Column) SelectSetter
+
+		// Skip the number of offset
+		Skip(int) SelectSetter
+
+		// Limit the number of getting column(limit clause)
+		Limit(int) SelectSetter
+
+		// ToQuery By executing this function at any time, it is possible to build and execute SQL as a Query type.
+		ToQuery() query.Query
+	}
+)
+
+// New Calling this returns a Select Setter type. If you don't need to set other items (such as where), you need to call ToQuery and make it executable.
+func New(cols column.Columns, tbl *table.Table) SelectSetter {
 	return &sel{columns: cols, table: tbl}
 }
 
-func SetFilterColumn(q query.Query, lo int, wheres ...*where.Condition) error {
-	sel, ok := q.(*sel)
-	if !ok {
-		return errors.New("assertion type query to *sel is faild")
-	}
-	sel.filter = where.NewConditions(lo, wheres...)
-	return nil
+// Filter Calling this sets a where filter and returns a Select Setter type. If you don't need to set any more items, you need to call ToQuery and make it executable.
+func (s *sel) Filter(lo int, wheres ...*where.Condition) SelectSetter {
+	s.filter = where.NewConditions(lo, wheres...)
+	return s
 }
 
-func SetGroupbyColumn(q query.Query, cols ...*column.Column) error {
-	sel, ok := q.(*sel)
-	if !ok {
-		return errors.New("assertion type query to *sel is faild")
-	}
-	sel.groupby = cols
-	return nil
+// GroupBy Calling this sets a group by columns and returns a SelectSetter type. If you don't need to set any more items, you need to call ToQuery and make it executable.
+func (s *sel) GroupBy(cols ...*column.Column) SelectSetter {
+	s.groupby = cols
+	return s
 }
 
-func SetOrderByColumn(q query.Query, desc bool, cols ...*column.Column) error {
-	sel, ok := q.(*sel)
-	if !ok {
-		return errors.New("assertion type query to *sel is faild")
-	}
-	sel.orderby = column.NewOrder(desc, cols...)
-	return nil
+// OrderBy Calling this sets a where order by columns and returns a SelectSetter type. If you don't need to set any more items, you need to call ToQuery and make it executable.
+func (s *sel) OrderBy(desc bool, cols ...*column.Column) SelectSetter {
+	s.orderby = column.NewOrder(desc, cols...)
+	return s
+}
+
+// Skip Calling this sets a offset number and returns a SelectSetter type. if limit is 0 or not set, this setting is ignored.
+func (s *sel) Skip(skip int) SelectSetter {
+	s.skip = skip
+	return s
+}
+
+// Limit Calling this sets a limit number and returns a SelectSetter type. If you don't need to set any more items, you need to call ToQuery and make it executable.
+func (s *sel) Limit(l int) SelectSetter {
+	s.limit = l
+	return s
+}
+
+// ToQuery makes structs buildable and executable
+func (s *sel) ToQuery() query.Query {
+	return s
 }
 
 // Build build SQL of SELECT sentence which is structured from SELECT and FROM. if you set "true" to "or", each filter works as OR
@@ -59,7 +92,6 @@ func (s *sel) Build() (string, error) {
 	if s.table.TName == "" {
 		return "", errors.New("no table selected")
 	}
-
 	queries := []string{
 		fmt.Sprintf("SELECT %s", strings.Join(s.columns.Line(), ", ")),
 		fmt.Sprintf("FROM %s", s.table.Line()),
@@ -77,17 +109,19 @@ func (s *sel) Build() (string, error) {
 			queries = append(queries, fmt.Sprintf("ORDER BY %s", s.orderby.Columns().Name()))
 		}
 	}
+	if s.limit > 0 {
+		if s.skip > 0 {
+			queries = append(queries, fmt.Sprintf("LIMIT %d, %d", s.skip, s.limit))
+		} else {
+			queries = append(queries, fmt.Sprintf("LIMIT %d", s.limit))
+		}
+	}
 	return strings.Join(queries, " "), nil
 }
 
 // Bind returns bind-values "?" in SQL.
 func (s *sel) Bind() query.Bind {
-	bs := query.Bind{}
-	for _, f := range s.filter.Conditions() {
-		b := f.Bind()
-		bs = append(bs, b...)
-	}
-	return bs
+	return s.filter.Bind()
 }
 
 // Execute Build and Bind, and execute the query based on the SQL and Value created by these.

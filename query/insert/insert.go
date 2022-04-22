@@ -10,27 +10,34 @@ import (
 	"github.com/toyohashi6140/go_sql_builder/table"
 )
 
-type insert struct {
-	table   *table.Table
-	columns column.Columns
-	values  query.Bind
-}
+type (
+	insert struct {
+		table   *table.Table
+		columns column.Columns
+		values  query.Bind
+	}
 
-func New(t *table.Table, vals ...interface{}) query.Query {
+	InsertSetter interface {
+		Columns(cols ...*column.Column) query.Query
+		ToQuery() query.Query
+	}
+)
+
+func New(t *table.Table, vals ...interface{}) InsertSetter {
 	return &insert{table: t, values: vals}
 }
 
-func SetColumns(q query.Query, cols ...*column.Column) error {
-	i, ok := q.(*insert)
-	if !ok {
-		return errors.New("assertion type query to *insert is faild")
-	}
+func (i *insert) Columns(cols ...*column.Column) query.Query {
 	i.columns = cols
 	return nil
 }
 
+func (i *insert) ToQuery() query.Query {
+	return i
+}
+
 func (i *insert) Build() (string, error) {
-	if i.table == nil {
+	if i.table == nil || i.table.TName == "" {
 		return "", errors.New("no tables selected")
 	}
 	var sql string

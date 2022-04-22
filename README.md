@@ -3,6 +3,13 @@
 This package enables automatic generation and execution of SQL.
 All you have to do is create a Column type and name the column.
 
+You can download the module by running the following command
+
+
+```
+go get -u github.com/toyohashi6140/go_sql_builder
+```
+
 Below is the sample code.
 The variable db is your database connection information, here we assume it was received in advance.
 
@@ -74,7 +81,7 @@ func Sample(db *sql.DB) {
 
 	// If you want to use "between" operator, this function can be used.
 	// The arguments are the column name, A, B in order from the left.
-	// Now you can create statement " `column` Between A and B "
+	// Now you can create clause " `column` Between A and B "
 	condB, err := where.NewBetweens(
 		where.AND,
 		where.NewBetween("entry_date", time.Date(2022, time.December, 20, 0, 0, 0, 0, time.Local), time.Now()),
