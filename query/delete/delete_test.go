@@ -39,20 +39,11 @@ func Test_delete_Build(t *testing.T) {
 				&table.Table{TName: "member"},
 				where.NewConditions(where.AND, cond),
 			},
-			"DELETE FROM member WHERE member_id = 1 AND status = 0",
+			"DELETE FROM member WHERE member_id = ? AND status = ?",
 			false,
 		},
 		{
-			"ErrorCase 1: no tables",
-			fields{
-				nil,
-				where.NewConditions(where.AND, cond),
-			},
-			"",
-			true,
-		},
-		{
-			"ErrorCase 2: table name is unset",
+			"ErrorCase 1: table name is unset",
 			fields{
 				&table.Table{},
 				where.NewConditions(where.AND, cond),
@@ -61,7 +52,7 @@ func Test_delete_Build(t *testing.T) {
 			true,
 		},
 		{
-			"ErrorCase 3: no conditions",
+			"ErrorCase 2: no conditions",
 			fields{
 				&table.Table{TName: "member"},
 				nil,
@@ -70,7 +61,7 @@ func Test_delete_Build(t *testing.T) {
 			true,
 		},
 		{
-			"ErrorCase 4: conditions is enpty",
+			"ErrorCase 3: conditions is enpty",
 			fields{
 				&table.Table{TName: "member"},
 				&where.Conditions{},

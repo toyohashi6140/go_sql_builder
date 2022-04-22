@@ -272,14 +272,8 @@ func Test_sel_Build(t *testing.T) {
 			true,
 		},
 		{
-			"Error Case2: undefined table name ",
+			"Error Case2: undefined table name",
 			fields{columns: column.Columns{{CName: "member_id", Alias: "id"}}, table: &table.Table{}},
-			"",
-			true,
-		},
-		{
-			"Error Case2: undefined table struct ",
-			fields{columns: column.Columns{{CName: "member_id", Alias: "id"}}, table: nil},
 			"",
 			true,
 		},

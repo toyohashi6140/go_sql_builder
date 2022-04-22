@@ -46,6 +46,10 @@ type (
 
 // New Calling this returns a Select Setter type. If you don't need to set other items (such as where), you need to call ToQuery and make it executable.
 func New(cols column.Columns, tbl *table.Table) SelectSetter {
+	// if tbl is nil caused panic. so substitute empty struct
+	if tbl == nil {
+		tbl = &table.Table{}
+	}
 	return &sel{columns: cols, table: tbl}
 }
 
