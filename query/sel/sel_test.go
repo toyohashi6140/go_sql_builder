@@ -286,6 +286,8 @@ func Test_sel_Build(t *testing.T) {
 				filter:  tt.fields.filter,
 				groupby: tt.fields.groupby,
 				orderby: tt.fields.orderby,
+				skip:    tt.fields.skip,
+				limit:   tt.fields.limit,
 			}
 			got, err := s.Build()
 			if (err != nil) != tt.wantErr {
