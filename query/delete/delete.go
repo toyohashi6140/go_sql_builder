@@ -16,6 +16,9 @@ type delete struct {
 }
 
 func New(t *table.Table, f *where.Conditions) query.Query {
+	if t == nil {
+		t = &table.Table{}
+	}
 	return &delete{t, f}
 }
 
